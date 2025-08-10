@@ -33,7 +33,7 @@ docker run -p 7000:7000 ul
 ## todo
 
 - [ ] Implement URL shortening logic (`POST /s` endpoint)
-- [ ] Add URL redirect functionality (`GET /:shortened` endpoint)  
+- [ ] Add URL redirect functionality (`GET /:shortened` endpoint)
 - [ ] Create statistics tracking (`GET /:shortened/stats` endpoint)
 - [ ] Generate QR codes for shortened URLs (`GET /:shortened/qr` endpoint)
 - [ ] Add database integration for URL storage
