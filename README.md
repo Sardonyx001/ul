@@ -29,3 +29,18 @@ air
 docker build -t ul .
 docker run -p 7000:7000 ul
 ```
+
+## todo
+
+- [ ] Implement URL shortening logic (`POST /s` endpoint)
+- [ ] Add URL redirect functionality (`GET /:shortened` endpoint)  
+- [ ] Create statistics tracking (`GET /:shortened/stats` endpoint)
+- [ ] Generate QR codes for shortened URLs (`GET /:shortened/qr` endpoint)
+- [ ] Add database integration for URL storage
+- [ ] Implement rate limiting and security measures
+- [ ] Add URL validation and sanitization
+- [ ] Create comprehensive test suite
+- [ ] Add Docker configuration
+- [ ] Set up CI/CD pipeline
+- [ ] Add logging and monitoring
+- [ ] Create API documentation
