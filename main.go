@@ -8,6 +8,12 @@ import (
 	"os"
 )
 
+var (
+	Version   string
+	BuildTime string
+	Commit    string
+)
+
 func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
