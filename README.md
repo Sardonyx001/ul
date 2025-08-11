@@ -18,7 +18,7 @@ This API supports the following endpoints:
 
 ### run with go
 
-```sh
+```bash
 go run main.go
 
 # or live-reload with air
