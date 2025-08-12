@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  APP: ul
+  VER: ${{ github.ref_name }}
+  GO_VERSION: '1.24.5'
+
+jobs:
+  build_for_linux:
+    name: Build for Linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Build ${{ matrix.arch }}
+      run: |
+        mkdir -p build/linux/${{ matrix.arch }}/$VER
+        
+        if [ "${{ matrix.arch }}" = "arm64" ]; then
+          export GOARCH=arm64
+        else
+          export GOARCH=amd64
+        fi
+        
+        CGO_ENABLED=0 GOOS=linux go build \
+          -ldflags="-X 'main.Version=$VER' -X 'main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)' -X 'main.Commit=${{ github.sha }}'" \
+          -o build/linux/${{ matrix.arch }}/$VER/$APP .
+        
+        cp LICENSE build/linux/${{ matrix.arch }}/$VER/ || echo "LICENSE file not found, skipping..."
+        
+        cd build/linux/${{ matrix.arch }}/$VER
+        tar -czf $APP-${VER#v}-linux-${{ matrix.arch }}.tar.gz $APP LICENSE 2>/dev/null || tar -czf $APP-${VER#v}-linux-${{ matrix.arch }}.tar.gz $APP
+        
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-linux-${{ matrix.arch }}
+        path: build/linux/**/*
+        if-no-files-found: error
+
+  build_for_macos:
+    name: Build for macOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Build ${{ matrix.arch }}
+      run: |
+        mkdir -p build/darwin/${{ matrix.arch }}/$VER
+        
+        if [ "${{ matrix.arch }}" = "arm64" ]; then
+          export GOARCH=arm64
+        else
+          export GOARCH=amd64
+        fi
+        
+        CGO_ENABLED=0 GOOS=darwin go build \
+          -ldflags="-X 'main.Version=$VER' -X 'main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)' -X 'main.Commit=${{ github.sha }}'" \
+          -o build/darwin/${{ matrix.arch }}/$VER/$APP .
+        
+        cp LICENSE build/darwin/${{ matrix.arch }}/$VER/ || echo "LICENSE file not found, skipping..."
+        
+        cd build/darwin/${{ matrix.arch }}/$VER
+        tar -czf $APP-${VER#v}-darwin-${{ matrix.arch }}.tar.gz $APP LICENSE 2>/dev/null || tar -czf $APP-${VER#v}-darwin-${{ matrix.arch }}.tar.gz $APP
+        
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-darwin-${{ matrix.arch }}
+        path: build/darwin/**/*
+        if-no-files-found: error
+
+  build_for_windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Build amd64
+      shell: bash
+      run: |
+        mkdir -p build/windows/amd64/$VER
+        
+        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
+          -ldflags="-X 'main.Version=$VER' -X 'main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)' -X 'main.Commit=${{ github.sha }}'" \
+          -o build/windows/amd64/$VER/$APP.exe .
+        
+        cp LICENSE build/windows/amd64/$VER/ || echo "LICENSE file not found, skipping..."
+        
+        cd build/windows/amd64/$VER
+        zip $APP-${VER#v}-windows-amd64.zip $APP.exe LICENSE 2>/dev/null || zip $APP-${VER#v}-windows-amd64.zip $APP.exe
+        
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-windows
+        path: build/windows/**/*
+        if-no-files-found: error
+
+  draft_release:
+    name: Draft Release
+    needs:
+      - build_for_linux
+      - build_for_macos
+      - build_for_windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        
+      - name: List downloaded artifacts
+        run: |
+          find . -name "*.tar.gz" -o -name "*.zip" | sort
+          
+      - name: Create Draft Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: ${{ env.APP }} ${{ env.VER }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist-*/*/*/*.tar.gz
+            dist-*/*/*/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
