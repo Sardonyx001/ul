@@ -24,8 +24,7 @@ func main() {
 	ctx := context.Background()
 
 	if err := godotenv.Load(); err != nil {
-		log.Error("Error loading .env file.", "error", err)
-		os.Exit(1)
+		log.Warn("No .env file found, using environment variables directly", "error", err)
 	}
 
 	var cfg Config
