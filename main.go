@@ -24,7 +24,7 @@ func main() {
 	ctx := context.Background()
 
 	if err := godotenv.Load(); err != nil {
-		log.Warn("No .env file found, using environment variables directly", "error", err)
+		log.Warn("No env file found, using environment variables directly", "error", err)
 	}
 
 	var cfg Config
@@ -55,13 +55,13 @@ type Server struct {
 	config *Config
 }
 
-func NewServer(cfg *Config) *Server {
-	if cfg == nil {
+func NewServer(config *Config) *Server {
+	if config == nil {
 		log.Error("Configuration is nil")
 		return nil
 	}
 
-	db, err := sql.Open("sqlite", cfg.DatabaseURL)
+	db, err := sql.Open("sqlite", config.DatabaseURL)
 	if err != nil {
 		log.Error("Failed to connect to database", "error", err)
 		return nil
@@ -69,6 +69,6 @@ func NewServer(cfg *Config) *Server {
 
 	return &Server{
 		db:     db,
-		config: cfg,
+		config: config,
 	}
 }
