@@ -98,6 +98,9 @@ jobs:
     name: Build for Windows
     runs-on: windows-latest
     steps:
+    - name: Install build dependencies
+      run: choco install zip
+      
     - name: Checkout
       uses: actions/checkout@v4
       
