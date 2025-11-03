@@ -138,6 +138,12 @@ func NewApp(ctx context.Context, config *Config, opts ...AppOption) (*App, error
 		},
 	}
 
+	// Initialize database schema
+	if err := app.initDB(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
+	}
+
 	// Apply functional options
 	for _, opt := range opts {
 		if err := opt(app); err != nil {
@@ -157,17 +163,18 @@ func NewApp(ctx context.Context, config *Config, opts ...AppOption) (*App, error
 func (a *App) setupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// Health check endpoint
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"status":"ok","version":"%s", "buildTime":"%s", "commit":"%s"}`, Version, BuildTime, Commit)
 	})
 
-	// TODO: Add URL shortener endpoints
-	// mux.HandleFunc("POST /s", a.handleShorten)
-	// mux.HandleFunc("GET /{shortened}", a.handleRedirect)
-	// mux.HandleFunc("GET /{shortened}/stats", a.handleStats)
-	// mux.HandleFunc("GET /{shortened}/qr", a.handleQR)
+	// URL shortener endpoints
+	mux.HandleFunc("POST /s", a.handleShorten)
+	mux.HandleFunc("GET /{shortCode}/stats", a.handleStats)
+	mux.HandleFunc("GET /{shortCode}/qr", a.handleQR)
+	mux.HandleFunc("GET /{shortCode}", a.handleRedirect)
 
 	return mux
 }

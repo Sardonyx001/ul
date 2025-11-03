@@ -32,15 +32,15 @@ docker run -p 7000:7000 ul
 
 ## todo
 
-- [ ] Implement URL shortening logic (`POST /s` endpoint)
-- [ ] Add URL redirect functionality (`GET /:shortened` endpoint)
-- [ ] Create statistics tracking (`GET /:shortened/stats` endpoint)
-- [ ] Generate QR codes for shortened URLs (`GET /:shortened/qr` endpoint)
-- [ ] Add database integration for URL storage
+- [x] Implement URL shortening logic (`POST /s` endpoint)
+- [x] Add URL redirect functionality (`GET /:shortened` endpoint)
+- [x] Create statistics tracking (`GET /:shortened/stats` endpoint)
+- [x] Generate QR codes for shortened URLs (`GET /:shortened/qr` endpoint)
+- [x] Add database integration for URL storage
 - [ ] Implement rate limiting and security measures
-- [ ] Add URL validation and sanitization
+- [x] Add URL validation and sanitization
 - [ ] Create comprehensive test suite
 - [ ] Add Docker configuration
 - [ ] Set up CI/CD pipeline
-- [ ] Add logging and monitoring
+- [x] Add logging and monitoring
 - [ ] Create API documentation

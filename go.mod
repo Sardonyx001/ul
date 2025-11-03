@@ -7,4 +7,7 @@ require (
 	github.com/sethvargo/go-envconfig v1.3.0
 )
 
-require github.com/mattn/go-sqlite3 v1.14.32
+require (
+	github.com/mattn/go-sqlite3 v1.14.32
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+)
