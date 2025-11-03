@@ -1,6 +1,11 @@
 # Build stage
 FROM golang:1.24-alpine AS builder
 
+# Build arguments for version information
+ARG VERSION=dev
+ARG BUILD_TIME
+ARG COMMIT=unknown
+
 # Install ca-certificates for HTTPS requests
 RUN apk add --no-cache ca-certificates git
 
@@ -16,9 +21,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary with optimizations for size
+# Build the binary with optimizations for size and version information
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags='-w -s -extldflags "-static"' \
+    -ldflags="-w -s -extldflags '-static' -X 'main.Version=${VERSION}' -X 'main.BuildTime=${BUILD_TIME}' -X 'main.Commit=${COMMIT}'" \
     -a -installsuffix cgo \
     -o main .
 
