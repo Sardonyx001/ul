@@ -7,7 +7,7 @@ ARG BUILD_TIME
 ARG COMMIT=unknown
 
 # Install ca-certificates for HTTPS requests
-RUN apk add --no-cache ca-certificates git
+RUN apk add --no-cache ca-certificates=20251003-r0
 
 # Set working directory
 WORKDIR /app
@@ -23,9 +23,9 @@ COPY . .
 
 # Build the binary with optimizations for size and version information
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-w -s -extldflags '-static' -X 'main.Version=${VERSION}' -X 'main.BuildTime=${BUILD_TIME}' -X 'main.Commit=${COMMIT}'" \
-    -a -installsuffix cgo \
-    -o main .
+  -ldflags="-w -s -extldflags '-static' -X 'main.Version=${VERSION}' -X 'main.BuildTime=${BUILD_TIME}' -X 'main.Commit=${COMMIT}'" \
+  -a -installsuffix cgo \
+  -o ul .
 
 # Final stage - use scratch for smallest possible image
 FROM scratch
@@ -34,10 +34,10 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy the binary
-COPY --from=builder /app/main /main
+COPY --from=builder /app/ul /ul
 
 # Expose port (if needed)
 EXPOSE 7000
 
 # Run the binary
-ENTRYPOINT ["/main"]
+ENTRYPOINT ["/ul"]
