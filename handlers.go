@@ -103,7 +103,7 @@ func (a *App) handleStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("Stats retrieved", "short_code", shortCode, "clicks", stats.Clicks)
+	log.Info("Stats retrieved", "short_code", shortCode, "clicks", stats.TotalClicks)
 	writeJSON(w, http.StatusOK, stats)
 }
 
