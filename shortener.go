@@ -62,21 +62,6 @@ func obfuscateID(id int64) int64 {
 	return obfuscated
 }
 
-// deobfuscateID reverses the obfuscation
-func deobfuscateID(obfuscated int64) int64 {
-	// Find modular multiplicative inverse of mixPrime
-	// For our purposes with base62 encoding, we can use a precomputed inverse
-	const mixPrimeInverse = 1061834701 // Modular inverse of mixPrime mod 2^31
-
-	// Reverse the multiplication
-	id := (obfuscated * mixPrimeInverse) & 0x7FFFFFFF
-
-	// Reverse the XOR
-	id = id ^ xorMask
-
-	return id
-}
-
 // encodeBase62 converts an integer to a base62 string
 func encodeBase62(num int64) string {
 	if num == 0 {
@@ -95,28 +80,6 @@ func encodeBase62(num int64) string {
 	return string(result)
 }
 
-// decodeBase62 converts a base62 string back to an integer
-func decodeBase62(encoded string) (int64, error) {
-	var num int64
-	base := int64(len(base62Chars))
-
-	for _, char := range encoded {
-		var value int64 = -1
-		for i, c := range base62Chars {
-			if c == char {
-				value = int64(i)
-				break
-			}
-		}
-		if value == -1 {
-			return 0, fmt.Errorf("invalid character in short code: %c", char)
-		}
-		num = num*base + value
-	}
-
-	return num, nil
-}
-
 // generateShortCode creates a collision-free, non-enumerable short code from an ID
 func generateShortCode(id int64) string {
 	// Obfuscate the ID to prevent enumeration
@@ -124,20 +87,6 @@ func generateShortCode(id int64) string {
 
 	// Encode to base62
 	return encodeBase62(obfuscated)
-}
-
-// parseShortCode extracts the original ID from a short code
-func parseShortCode(shortCode string) (int64, error) {
-	// Decode from base62
-	obfuscated, err := decodeBase62(shortCode)
-	if err != nil {
-		return 0, err
-	}
-
-	// Deobfuscate to get original ID
-	id := deobfuscateID(obfuscated)
-
-	return id, nil
 }
 
 // validateURL checks if the provided URL is valid
@@ -184,14 +133,13 @@ func (a *App) createShortURL(req *ShortenRequest) (*ShortenResponse, error) {
 			"SELECT id, short_code, original_url, created_at FROM urls WHERE id = ?",
 			existingID,
 		).Scan(&record.ID, &record.ShortCode, &record.OriginalURL, &record.CreatedAt)
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch existing record: %w", err)
 		}
 
 		return &ShortenResponse{
 			ShortCode:   shortCode,
-			ShortURL:    fmt.Sprintf("http://localhost:%s/%s", a.config.Port, shortCode),
+			ShortURL:    fmt.Sprintf("%s/%s", a.config.BaseURL, shortCode),
 			OriginalURL: record.OriginalURL,
 			CreatedAt:   record.CreatedAt,
 		}, nil
@@ -232,14 +180,13 @@ func (a *App) createShortURL(req *ShortenRequest) (*ShortenResponse, error) {
 		"SELECT id, short_code, original_url, created_at FROM urls WHERE id = ?",
 		id,
 	).Scan(&record.ID, &record.ShortCode, &record.OriginalURL, &record.CreatedAt)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch created record: %w", err)
 	}
 
 	return &ShortenResponse{
 		ShortCode:   record.ShortCode,
-		ShortURL:    fmt.Sprintf("http://localhost:%s/%s", a.config.Port, record.ShortCode),
+		ShortURL:    fmt.Sprintf("%s/%s", a.config.BaseURL, record.ShortCode),
 		OriginalURL: record.OriginalURL,
 		CreatedAt:   record.CreatedAt,
 	}, nil
@@ -275,7 +222,7 @@ func (a *App) getURL(shortCode string) (*URLRecord, error) {
 }
 
 // trackClick records a click event and updates statistics
-func (a *App) trackClick(urlID int64, userAgent, referer, ipAddress string) error {
+func (a *App) trackClick(urlID int64, userAgent, referer string) error {
 	tx, err := a.db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -284,9 +231,9 @@ func (a *App) trackClick(urlID int64, userAgent, referer, ipAddress string) erro
 
 	// Insert click record
 	_, err = tx.Exec(`
-		INSERT INTO clicks (url_id, user_agent, referer, ip_address)
-		VALUES (?, ?, ?, ?)
-	`, urlID, userAgent, referer, ipAddress)
+		INSERT INTO clicks (url_id, user_agent, referer)
+		VALUES (?, ?, ?)
+	`, urlID, userAgent, referer)
 	if err != nil {
 		return fmt.Errorf("failed to insert click record: %w", err)
 	}
@@ -356,7 +303,6 @@ func (a *App) initDB() error {
 			clicked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			user_agent TEXT,
 			referer TEXT,
-			ip_address TEXT,
 			FOREIGN KEY (url_id) REFERENCES urls(id) ON DELETE CASCADE
 		);
 

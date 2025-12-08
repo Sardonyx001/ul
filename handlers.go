@@ -70,9 +70,8 @@ func (a *App) handleRedirect(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		userAgent := r.Header.Get("User-Agent")
 		referer := r.Header.Get("Referer")
-		ipAddress := r.RemoteAddr
 
-		if err := a.trackClick(record.ID, userAgent, referer, ipAddress); err != nil {
+		if err := a.trackClick(record.ID, userAgent, referer); err != nil {
 			log.Error("Failed to track click", "error", err, "url_id", record.ID)
 		}
 	}()
@@ -120,7 +119,7 @@ func (a *App) handleQR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build the short URL
-	shortURL := fmt.Sprintf("http://localhost:%s/%s", a.config.Port, shortCode)
+	shortURL := fmt.Sprintf("%s/%s", a.config.BaseURL, shortCode)
 
 	// Generate QR code
 	qr, err := qrcode.New(shortURL, qrcode.Medium)

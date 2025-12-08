@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,8 +14,10 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sethvargo/go-envconfig"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
+
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -88,6 +91,7 @@ func main() {
 type Config struct {
 	DatabaseURL string `env:"UL_DATABASE_URL, required"`
 	Port        string `env:"UL_PORT, default=7000"`
+	BaseURL     string `env:"UL_BASE_URL, default=http://localhost:7000"`
 }
 
 type App struct {
@@ -113,14 +117,14 @@ func NewApp(ctx context.Context, config *Config, opts ...AppOption) (*App, error
 		return nil, fmt.Errorf("configuration is nil")
 	}
 
-	db, err := sql.Open("sqlite3", config.DatabaseURL)
+	db, err := sql.Open("libsql", config.DatabaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
 
 	// Verify database connection
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
+		err = db.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
@@ -140,15 +144,15 @@ func NewApp(ctx context.Context, config *Config, opts ...AppOption) (*App, error
 
 	// Initialize database schema
 	if err := app.initDB(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("failed to initialize database: %w", err)
+		dberr := db.Close()
+		return nil, fmt.Errorf("failed to initialize database: %w", errors.Join(err, dberr))
 	}
 
 	// Apply functional options
 	for _, opt := range opts {
 		if err := opt(app); err != nil {
-			db.Close()
-			return nil, fmt.Errorf("failed to apply option: %w", err)
+			dberr := db.Close()
+			return nil, fmt.Errorf("failed to apply option: %w", errors.Join(err, dberr))
 		}
 	}
 
@@ -167,7 +171,9 @@ func (a *App) setupRoutes() *http.ServeMux {
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","version":"%s", "buildTime":"%s", "commit":"%s"}`, Version, BuildTime, Commit)
+		if _, err := fmt.Fprintf(w, `{"status":"ok","version":"%s", "buildTime":"%s", "commit":"%s"}`, Version, BuildTime, Commit); err != nil {
+			log.Error("Failed to write response", "error", err)
+		}
 	})
 
 	// URL shortener endpoints
