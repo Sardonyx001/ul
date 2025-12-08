@@ -28,9 +28,11 @@ func writeError(w http.ResponseWriter, status int, message string) {
 
 // handleShorten handles POST /s - creates a shortened URL
 func (a *App) handleShorten(w http.ResponseWriter, r *http.Request) {
+	log.Info("Shorten URL requested", "method", r.Method, "path", r.URL.Path)
 	var req ShortenRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Error("Invalid request body", "error", err, "method", r.Method)
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
@@ -48,10 +50,12 @@ func (a *App) handleShorten(w http.ResponseWriter, r *http.Request) {
 
 // handleRedirect handles GET /{shortened} - redirects to original URL
 func (a *App) handleRedirect(w http.ResponseWriter, r *http.Request) {
+	log.Info("Redirect requested", "method", r.Method, "path", r.URL.Path)
 	shortCode := strings.TrimPrefix(r.URL.Path, "/")
 
 	// Filter out special endpoints
 	if shortCode == "" || shortCode == "health" || strings.HasSuffix(shortCode, "/stats") || strings.HasSuffix(shortCode, "/qr") {
+		log.Info("Special endpoint filtered", "path", r.URL.Path)
 		http.NotFound(w, r)
 		return
 	}
@@ -82,10 +86,12 @@ func (a *App) handleRedirect(w http.ResponseWriter, r *http.Request) {
 
 // handleStats handles GET /{shortened}/stats - returns URL statistics
 func (a *App) handleStats(w http.ResponseWriter, r *http.Request) {
+	log.Info("Stats requested", "method", r.Method, "path", r.URL.Path)
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	shortCode := strings.TrimSuffix(path, "/stats")
 
 	if shortCode == "" {
+		log.Error("Empty short code in stats request", "path", r.URL.Path)
 		writeError(w, http.StatusBadRequest, "Short code is required")
 		return
 	}
@@ -97,15 +103,18 @@ func (a *App) handleStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Info("Stats retrieved", "short_code", shortCode, "clicks", stats.Clicks)
 	writeJSON(w, http.StatusOK, stats)
 }
 
 // handleQR handles GET /{shortened}/qr - generates QR code
 func (a *App) handleQR(w http.ResponseWriter, r *http.Request) {
+	log.Info("QR code requested", "method", r.Method, "path", r.URL.Path)
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	shortCode := strings.TrimSuffix(path, "/qr")
 
 	if shortCode == "" {
+		log.Error("Empty short code in QR request", "path", r.URL.Path)
 		writeError(w, http.StatusBadRequest, "Short code is required")
 		return
 	}

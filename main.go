@@ -42,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Configuration loaded")
+	log.Info("Configuration loaded", "config", cfg)
 
 	app, err := NewApp(ctx, &cfg)
 	if err != nil {
@@ -169,10 +169,13 @@ func (a *App) setupRoutes() *http.ServeMux {
 
 	// Health check endpoint
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		log.Info("Health check requested", "method", r.Method, "path", r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if _, err := fmt.Fprintf(w, `{"status":"ok","version":"%s", "buildTime":"%s", "commit":"%s"}`, Version, BuildTime, Commit); err != nil {
-			log.Error("Failed to write response", "error", err)
+			log.Error("Failed to write health response", "error", err)
+		} else {
+			log.Info("Health check succeeded", "status", "ok", "version", Version)
 		}
 	})
 
