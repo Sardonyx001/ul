@@ -48,6 +48,30 @@ func (a *App) handleShorten(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, resp)
 }
 
+// handleShortenGET handles GET /s?u=URL - creates a shortened URL via query parameter
+func (a *App) handleShortenGET(w http.ResponseWriter, r *http.Request) {
+	log.Info("Shorten URL requested (GET)", "method", r.Method, "path", r.URL.Path)
+
+	// Get URL from query parameter
+	urlParam := r.URL.Query().Get("u")
+	if urlParam == "" {
+		log.Error("Missing URL query parameter", "method", r.Method)
+		writeError(w, http.StatusBadRequest, "Missing 'u' query parameter")
+		return
+	}
+
+	req := &ShortenRequest{URL: urlParam}
+	resp, err := a.createShortURL(req)
+	if err != nil {
+		log.Error("Failed to create short URL", "error", err, "url", req.URL)
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	log.Info("URL shortened", "original", req.URL, "short_code", resp.ShortCode)
+	writeJSON(w, http.StatusCreated, resp)
+}
+
 // handleRedirect handles GET /{shortened} - redirects to original URL
 func (a *App) handleRedirect(w http.ResponseWriter, r *http.Request) {
 	log.Info("Redirect requested", "method", r.Method, "path", r.URL.Path)
