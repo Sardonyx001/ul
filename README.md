@@ -1,6 +1,10 @@
 # ul: a minimal, fast and secure URL shortener
 
-![coverage](https://raw.githubusercontent.com/Sardonyx001/ul/badges/.badges/main/coverage.svg)
+[![Go Version](https://img.shields.io/badge/Go-1.24.5-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Build Status](https://github.com/Sardonyx001/ul/actions/workflows/build.yml/badge.svg)](https://github.com/Sardonyx001/ul/actions/workflows/build.yml)
+[![Test Coverage](https://raw.githubusercontent.com/Sardonyx001/ul/badges/.badges/main/coverage.svg)](https://github.com/Sardonyx001/ul/tree/main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sardonyx001/ul)](https://goreportcard.com/report/github.com/sardonyx001/ul)
+[![License: Coffeeware](https://img.shields.io/badge/License-Coffeeware-brown.svg)](./LICENSE)
 
 ## why?
 
