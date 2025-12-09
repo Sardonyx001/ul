@@ -1,5 +1,7 @@
 # ul: a minimal, fast and secure URL shortener
 
+![coverage](https://raw.githubusercontent.com/Sardonyx001/ul/badges/.badges/main/coverage.svg)
+
 ## why?
 
 This is a hobby project for now, but I hope to make it a useful tool for myself and others in the future.
@@ -9,7 +11,8 @@ The main goal is to create a simple, fast, and secure URL shortener that can be 
 
 This API supports the following endpoints:
 
-- `POST /s`: Shortens a given URL.
+- `POST /s`: Shortens a given URL (JSON body: `{"url": "https://example.com"}`)
+- `GET /s?u=<url>`: Shortens a given URL via query parameter
 - `GET /:shortened`: Redirects to the original URL based on the shortened version
 - `GET /:shortened/stats`: Returns statistics about the shortened URL
 - `GET /:shortened/qr`: Returns a QR code for the shortened URL.
@@ -39,8 +42,8 @@ docker run -p 7000:7000 ul
 - [x] Add database integration for URL storage
 - [ ] Implement rate limiting and security measures
 - [x] Add URL validation and sanitization
-- [ ] Create comprehensive test suite
-- [ ] Add Docker configuration
-- [ ] Set up CI/CD pipeline
+- [x] Create comprehensive test suite
+- [x] Add Docker configuration
+- [x] Set up CI/CD pipeline
 - [x] Add logging and monitoring
 - [ ] Create API documentation
