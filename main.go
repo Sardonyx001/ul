@@ -181,6 +181,7 @@ func (a *App) setupRoutes() *http.ServeMux {
 
 	// URL shortener endpoints
 	mux.HandleFunc("POST /s", a.handleShorten)
+	mux.HandleFunc("GET /s", a.handleShortenGET)
 	mux.HandleFunc("GET /{shortCode}/stats", a.handleStats)
 	mux.HandleFunc("GET /{shortCode}/qr", a.handleQR)
 	mux.HandleFunc("GET /{shortCode}", a.handleRedirect)
