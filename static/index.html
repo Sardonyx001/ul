@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ul</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family:
+          "Geist Mono", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono",
+          "Courier New", monospace;
+        line-height: 1.6;
+        margin: 2rem;
+        background: #000;
+        color: #fff;
+        font-size: 14px;
+      }
+      pre {
+        font-family: inherit;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin: 0;
+      }
+      a {
+        color: #0af;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: bold;
+        user-select: none;
+      }
+      summary:hover {
+        color: #0af;
+      }
+      /* Make code blocks easy to copy */
+      .code-block {
+        position: relative;
+        display: inline-block;
+        width: fit-content;
+        max-width: 100%;
+      }
+      pre pre {
+        background: #111;
+        border-left: 3px solid #0af;
+        padding: 0.5rem 1rem;
+        overflow-x: auto;
+        user-select: all;
+        display: block;
+      }
+      /* Highlight on hover for better visibility */
+      pre pre:hover {
+        background: #1a1a1a;
+        border-left-color: #0cf;
+      }
+      .copy-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: transparent;
+        border: none;
+        padding: 0rem;
+        cursor: pointer;
+        border-radius: 4px;
+        opacity: 0;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .copy-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: #666;
+        fill: none;
+        transition: stroke 0.15s ease;
+      }
+      .code-block:hover .copy-btn {
+        opacity: 1;
+      }
+      .copy-btn:hover {
+        background: #222;
+      }
+      .copy-btn:hover svg {
+        stroke: #0af;
+      }
+      .copy-btn:active {
+        transform: scale(0.95);
+      }
+      .copy-btn.copied svg {
+        stroke: #0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <pre>
+UNORDERED LIST
+==============
+
+Minimal URL shortener.
+
+<details id="shortening">
+<summary>Shortening URLs</summary>
+Send HTTP POST requests to https://ul.jamell.dev/s with JSON body:
+
+<pre>curl -X POST https://ul.jamell.dev/s \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com"}'</pre>
+
+Or use a simple GET request with query parameter:
+
+<pre>curl "https://ul.jamell.dev/s?u=https://example.com"</pre>
+
+Response:
+  ┌─────────────┬────────────────────────────────────────────────────┐
+  │ field       │ description                                        │
+  ╞═════════════╪════════════════════════════════════════════════════╡
+  │ short_code  │ The unique identifier for the shortened URL        │
+  ├─────────────┼────────────────────────────────────────────────────┤
+  │ short_url   │ Full shortened URL                                 │
+  ├─────────────┼────────────────────────────────────────────────────┤
+  │ original_url│ The URL you submitted                              │
+  ├─────────────┼────────────────────────────────────────────────────┤
+  │ created_at  │ Timestamp of URL creation                          │
+  └─────────────┴────────────────────────────────────────────────────┘
+
+The same URL will always generate the same short code.
+</details>
+
+<details id="redirecting">
+<summary>Using shortened URLs</summary>
+Access your shortened URL:
+
+<pre>https://ul.jamell.dev/{short_code}</pre>
+
+This will redirect you to the original URL and track the click.
+</details>
+
+<details id="stats">
+<summary>Viewing statistics</summary>
+Get statistics for any shortened URL:
+
+<pre>curl https://ul.jamell.dev/{short_code}/stats</pre>
+
+Response includes:
+  - Total clicks
+  - Creation timestamp
+  - Last clicked timestamp
+  - Original URL
+</details>
+
+<details id="qr">
+<summary>QR codes</summary>
+Generate a QR code for any shortened URL:
+
+<pre>https://ul.jamell.dev/{short_code}/qr</pre>
+
+Returns a PNG image that can be scanned to access the shortened URL.
+</details>
+
+<details id="features">
+<summary>Features</summary>
+[x] Collision-free short codes using ID obfuscation
+[x] URL validation (http/https only)
+[x] Click tracking with User-Agent and Referer
+[x] QR code generation
+[x] Statistics endpoint
+[x] Idempotent: same URL -> same short code
+[x] libsql/SQLite backend
+[x] No tracking, no ads, no bullshit
+</details>
+
+<details id="api">
+<summary>API Reference</summary>
+Endpoints:
+  ┌────────────────────────────────┬──────────────────────────────┐
+  │ endpoint                       │ description                  │
+  ╞════════════════════════════════╪══════════════════════════════╡
+  │ POST /s                        │ Shorten URL (JSON body)      │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ GET /s?u={url}                 │ Shorten URL (query param)    │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ GET /{short_code}              │ Redirect to original URL     │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ GET /{short_code}/stats        │ Get statistics               │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ GET /{short_code}/qr           │ Get QR code (PNG)            │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ GET /health                    │ Health check                 │
+  └────────────────────────────────┴──────────────────────────────┘
+</details>
+
+Source: <a href="https://github.com/Sardonyx001/ul">github.com/Sardonyx001/ul</a>
+</pre>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // SVG icons
+        const copyIcon =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+        const checkIcon =
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+        // Find all code blocks and wrap them with copy buttons
+        const codeBlocks = document.querySelectorAll("pre pre");
+        codeBlocks.forEach(function (block) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block";
+          block.parentNode.insertBefore(wrapper, block);
+          wrapper.appendChild(block);
+
+          const button = document.createElement("button");
+          button.className = "copy-btn";
+          button.innerHTML = copyIcon;
+          button.onclick = function () {
+            navigator.clipboard.writeText(block.textContent).then(function () {
+              button.innerHTML = checkIcon;
+              button.classList.add("copied");
+              setTimeout(function () {
+                button.innerHTML = copyIcon;
+                button.classList.remove("copied");
+              }, 2000);
+            });
+          };
+          wrapper.appendChild(button);
+        });
+      });
+    </script>
+  </body>
+</html>
