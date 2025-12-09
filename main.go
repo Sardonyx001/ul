@@ -2,8 +2,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	_ "embed"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,6 +21,9 @@ import (
 
 	_ "modernc.org/sqlite"
 )
+
+//go:embed static/index.html
+var indexHTML []byte
 
 var (
 	Version   string = "dev"
@@ -166,6 +171,17 @@ func NewApp(ctx context.Context, config *Config, opts ...AppOption) (*App, error
 
 func (a *App) setupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
+
+	// Static homepage
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			// Let other handlers deal with non-root paths
+			http.NotFound(w, r)
+			return
+		}
+		log.Info("Homepage requested", "method", r.Method, "path", r.URL.Path)
+		http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(indexHTML))
+	})
 
 	// Health check endpoint
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
