@@ -10,6 +10,12 @@
       href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
     <style>
       body {
         font-family:
@@ -52,10 +58,50 @@
       pre pre {
         background: #111;
         border-left: 3px solid #0af;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 2.5rem 0.5rem 1rem;
         overflow-x: auto;
         user-select: all;
         display: block;
+      }
+      pre code[class*="language-"] {
+        background: transparent;
+        padding: 0;
+        text-shadow: none;
+      }
+      /* Custom syntax highlighting colors for Prism */
+      .token.function {
+        color: #0af;
+        font-weight: bold;
+      }
+      .token.builtin,
+      .token.class-name {
+        color: #0af;
+      }
+      .token.keyword {
+        color: #09f;
+      }
+      .token.string,
+      .token.attr-value {
+        color: #5bf;
+      }
+      .token.number {
+        color: #0cf;
+      }
+      .token.operator,
+      .token.punctuation {
+        color: #fff;
+      }
+      .token.comment {
+        color: #666;
+        font-style: italic;
+      }
+      .token.property,
+      .token.parameter {
+        color: #0cf;
+      }
+      .token.url {
+        color: #5bf;
+        text-decoration: underline;
       }
       /* Highlight on hover for better visibility */
       pre pre:hover {
@@ -71,7 +117,6 @@
         padding: 0rem;
         cursor: pointer;
         border-radius: 4px;
-        opacity: 0;
         transition: all 0.15s ease;
         display: flex;
         align-items: center;
@@ -83,9 +128,6 @@
         stroke: #666;
         fill: none;
         transition: stroke 0.15s ease;
-      }
-      .code-block:hover .copy-btn {
-        opacity: 1;
       }
       .copy-btn:hover {
         background: #222;
@@ -99,6 +141,111 @@
       .copy-btn.copied svg {
         stroke: #0f0;
       }
+      .url-form {
+        display: inline-block;
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: #111;
+        border-left: 3px solid #0af;
+        vertical-align: top;
+        line-height: normal;
+        white-space: normal;
+      }
+      .url-form.error {
+        border-left-color: #f00;
+      }
+      .url-form form {
+        display: flex;
+        gap: 0.5rem;
+        margin: 0;
+      }
+      .url-form input {
+        flex: 0 1 400px;
+        padding: 0.5rem;
+        background: #000;
+        border: 1px solid #333;
+        color: #fff;
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .url-form input.error {
+        border-color: #f00;
+      }
+      .url-form input:focus {
+        outline: none;
+        border-color: #0af;
+      }
+      .url-form form button {
+        padding: 0.5rem 1rem;
+        background: #0af;
+        border: none;
+        color: #000;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        line-height: 1;
+      }
+      .url-form form button:hover {
+        background: #0cf;
+      }
+      .url-form form button:active {
+        transform: scale(0.98);
+      }
+      .url-form form button:disabled {
+        background: #666;
+        cursor: not-allowed;
+      }
+      .result {
+        margin-top: 0.75rem;
+        padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+        background: #1a1a1a;
+        border-left: 3px solid #0af;
+        display: none;
+        position: relative;
+      }
+      .result.error {
+        border-left-color: #f00;
+      }
+      .result a {
+        color: #0af;
+        font-weight: bold;
+      }
+      .result-copy-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: transparent;
+        border: none;
+        padding: 0rem;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .result-copy-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: #666;
+        fill: none;
+        transition: stroke 0.15s ease;
+      }
+      .result-copy-btn:hover {
+        background: #222;
+      }
+      .result-copy-btn:hover svg {
+        stroke: #0af;
+      }
+      .result-copy-btn:active {
+        transform: scale(0.95);
+      }
+      .result-copy-btn.copied svg {
+        stroke: #0f0;
+      }
     </style>
   </head>
   <body>
@@ -107,6 +254,19 @@ UNORDERED LIST
 ==============
 
 Minimal URL shortener.
+
+<div class="url-form" id="url-form-container">
+  <form id="shorten-form" novalidate>
+    <input
+      type="url"
+      id="url-input"
+      placeholder="https://example.com"
+      autocomplete="off"
+    />
+    <button type="submit">shorten</button>
+  </form>
+  <div class="result" id="result"></div>
+</div>
 
 <details id="shortening">
 <summary>Shortening URLs</summary>
@@ -149,7 +309,7 @@ This will redirect you to the original URL and track the click.
 <summary>Viewing statistics</summary>
 Get statistics for any shortened URL:
 
-<pre>curl https://ul.jamell.dev/{short_code}/stats</pre>
+<pre>curl "https://ul.jamell.dev/{short_code}/stats"</pre>
 
 Response includes:
   - Total clicks
@@ -202,16 +362,40 @@ Endpoints:
 Source: <a href="https://github.com/Sardonyx001/ul">github.com/Sardonyx001/ul</a>
 </pre>
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        // SVG icons
-        const copyIcon =
-          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
-        const checkIcon =
-          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      // SVG icons (global scope for onclick handler)
+      const copyIcon =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+      const checkIcon =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      const arrowIcon =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: middle; margin: 0 0.25rem;"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>';
 
+      // Copy short URL function
+      function copyShortUrl(url, button) {
+        navigator.clipboard.writeText(url).then(function () {
+          button.innerHTML = checkIcon;
+          button.classList.add("copied");
+          setTimeout(function () {
+            button.innerHTML = copyIcon;
+            button.classList.remove("copied");
+          }, 2000);
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
         // Find all code blocks and wrap them with copy buttons
         const codeBlocks = document.querySelectorAll("pre pre");
         codeBlocks.forEach(function (block) {
+          const originalText = block.textContent;
+
+          // Wrap content in code tag for Prism
+          const code = document.createElement("code");
+          code.className = "language-bash";
+          code.textContent = originalText;
+          block.innerHTML = "";
+          block.appendChild(code);
+          Prism.highlightElement(code);
+
           const wrapper = document.createElement("div");
           wrapper.className = "code-block";
           block.parentNode.insertBefore(wrapper, block);
@@ -221,7 +405,7 @@ Source: <a href="https://github.com/Sardonyx001/ul">github.com/Sardonyx001/ul</a
           button.className = "copy-btn";
           button.innerHTML = copyIcon;
           button.onclick = function () {
-            navigator.clipboard.writeText(block.textContent).then(function () {
+            navigator.clipboard.writeText(originalText).then(function () {
               button.innerHTML = checkIcon;
               button.classList.add("copied");
               setTimeout(function () {
@@ -231,6 +415,89 @@ Source: <a href="https://github.com/Sardonyx001/ul">github.com/Sardonyx001/ul</a
             });
           };
           wrapper.appendChild(button);
+        });
+
+        // Handle URL shortening form
+        const form = document.getElementById("shorten-form");
+        const input = document.getElementById("url-input");
+        const result = document.getElementById("result");
+        const formContainer = document.getElementById("url-form-container");
+
+        // Remove error styles on input
+        input.addEventListener("input", function () {
+          input.classList.remove("error");
+          formContainer.classList.remove("error");
+        });
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const url = input.value.trim();
+
+          // Validate URL
+          if (!url) {
+            input.classList.add("error");
+            formContainer.classList.add("error");
+            return;
+          }
+
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          submitBtn.textContent = "shortening...";
+
+          fetch("/s", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url: url }),
+          })
+            .then(function (response) {
+              if (!response.ok) {
+                return response.json().then(function (data) {
+                  throw new Error(data.error || "Failed to shorten URL");
+                });
+              }
+              return response.json();
+            })
+            .then(function (data) {
+              result.className = "result";
+              result.style.display = "block";
+
+              // Truncate original URL if longer than 20 chars
+              const displayUrl =
+                data.original_url.length > 20
+                  ? data.original_url.substring(0, 20) + "..."
+                  : data.original_url;
+
+              result.innerHTML =
+                '<a href="' +
+                data.short_url +
+                '" target="_blank">' +
+                data.short_url +
+                "</a>" +
+                ' <span style="color: #666;">' +
+                arrowIcon +
+                displayUrl +
+                "</span>" +
+                '<button class="result-copy-btn" onclick="copyShortUrl(\'' +
+                data.short_url +
+                "', this)\">" +
+                copyIcon +
+                "</button>";
+              input.value = "";
+            })
+            .catch(function (error) {
+              result.className = "result error";
+              result.style.display = "block";
+              result.innerHTML =
+                '<span style="color: #f00;">Error: ' +
+                error.message +
+                "</span>";
+            })
+            .finally(function () {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "shorten";
+            });
         });
       });
     </script>
