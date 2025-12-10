@@ -163,10 +163,27 @@ func NewApp(ctx context.Context, config *Config, opts ...AppOption) (*App, error
 
 	// If no custom routes provided, set up default routes
 	if app.server.Handler == nil {
-		app.server.Handler = app.setupRoutes()
+		app.server.Handler = corsMiddleware(app.setupRoutes())
 	}
 
 	return app, nil
+}
+
+// corsMiddleware adds CORS headers to allow cross-origin requests
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *App) setupRoutes() *http.ServeMux {
